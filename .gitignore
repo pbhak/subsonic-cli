@@ -1,3 +1,6 @@
+# application config
+config.yml
+
 # dependencies (bun install)
 node_modules
 
