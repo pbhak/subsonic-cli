@@ -9,17 +9,17 @@ type ConfigFile = {
   username?: string;
   password?: string;
   url?: string;
-}
+};
 
 type PingResponse = {
   "subsonic-response": {
-    status: string
-    version: string
-    type: string
-    serverVersion: string
-    openSubsonic: boolean
-  }
-}
+    status: string;
+    version: string;
+    type: string;
+    serverVersion: string;
+    openSubsonic: boolean;
+  };
+};
 
 function isValidURL(url: string) {
   // the URL class constructor errors if the passed in string is not a valid URL
@@ -138,18 +138,23 @@ app
       pingURL.searchParams.set("f", "json");
 
       try {
-        const ping = await fetch(pingURL).then(async res => await res.json()) as PingResponse;
-        if (ping["subsonic-response"].status === 'ok') {
-          console.log(`Server ${pingURL.origin} is online!`)
+        const ping = (await fetch(pingURL).then(
+          async (res) => await res.json()
+        )) as PingResponse;
+        if (ping["subsonic-response"].status === "ok") {
+          console.log(`Server ${pingURL.origin} is online!`);
           return;
         }
       } catch (error) {
         console.log(`An error occured while pinging ${pingURL.origin}`);
         return;
-      } 
+      }
     }
-
     console.log("Error - URL and credentials not set");
   });
+
+app
+  .command('get')
+  .description('Get ')
 
 app.parse();

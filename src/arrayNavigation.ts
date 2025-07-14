@@ -1,6 +1,11 @@
 import * as readline from "node:readline";
 
-export function navigateArray(array: string[], pageSize = 5) {
+export function navigateArray(
+  array: string[],
+  pageSize = 5,
+  originalArray = array,
+  originalPageSize = pageSize
+) {
   if (array.length < pageSize || array.length < 1) process.exit();
 
   array.slice(0, pageSize).forEach((element) => {
@@ -23,18 +28,30 @@ export function navigateArray(array: string[], pageSize = 5) {
 
     switch (key.name) {
       case "up":
-        // Up arrow pressed
+        readline.moveCursor(process.stdout, 0, -pageSize - 1);
+        readline.clearScreenDown(process.stdout);
+        
         break;
       case "down":
         readline.moveCursor(process.stdout, 0, -pageSize - 1);
         readline.clearScreenDown(process.stdout);
         if (array.slice(pageSize).length < pageSize) {
           process.stdin.removeListener("keypress", keypressHandler);
-          navigateArray(array.slice(pageSize), array.slice(pageSize).length);
+          navigateArray(
+            array.slice(pageSize),
+            array.slice(pageSize).length,
+            originalArray,
+            originalPageSize
+          );
           break;
         }
         process.stdin.removeListener("keypress", keypressHandler);
-        navigateArray(array.slice(pageSize), pageSize);
+        navigateArray(
+          array.slice(pageSize),
+          pageSize,
+          originalArray,
+          originalPageSize
+        );
         break;
       default:
         break;
@@ -57,5 +74,5 @@ navigateArray(
     "book",
     "drift",
   ],
-  4 
+  4
 );
