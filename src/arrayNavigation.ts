@@ -1,78 +1,203 @@
 import * as readline from "node:readline";
 
+interface ArrayNavigationResult {
+  selectedItem: string | undefined;
+  cancelled: boolean;
+}
+
 export function navigateArray(
   array: string[],
   pageSize = 5,
   originalArray = array,
-  originalPageSize = pageSize
-) {
-  if (array.length < pageSize || array.length < 1) process.exit();
-
-  array.slice(0, pageSize).forEach((element) => {
-    console.log(element);
-  });
-  if (array.length !== pageSize) {
-    console.log("(use arrow keys to navigate)");
-  } else {
-    console.log("(end of list)");
-  }
-
-  readline.emitKeypressEvents(process.stdin);
-  if (process.stdin.isTTY) process.stdin.setRawMode(true);
-
-  const keypressHandler = (_str: string, key: readline.Key) => {
-    if (key && key.ctrl && key.name === "c") {
-      console.log("Ctrl+C pressed - exiting...");
-      process.exit();
+  originalPageSize = pageSize,
+  currentIndex = 0
+): Promise<ArrayNavigationResult> {
+  return new Promise((resolve) => {
+    if (!array || array.length === 0) {
+      resolve({
+        selectedItem: undefined,
+        cancelled: true,
+      });
+      return;
     }
 
-    switch (key.name) {
-      case "up":
-        readline.moveCursor(process.stdout, 0, -pageSize - 1);
+    const minifiedPageSize = Math.min(pageSize, array.length);
+
+    const currentPage = array.slice(0, minifiedPageSize);
+    currentPage.forEach((element) => console.log(element));
+
+    const onlyPage = !(
+      currentIndex + minifiedPageSize < originalArray.length || currentIndex > 0
+    );
+
+    if (onlyPage) {
+      console.log("(Enter to select page, Esc/Ctrl+C to cancel)");
+    } else {
+      console.log(
+        "(Arrow keys to navigate, Enter to select page, Esc/Ctrl+C to cancel)"
+      );
+    }
+
+    readline.emitKeypressEvents(process.stdin);
+    if (process.stdin.isTTY) process.stdin.setRawMode(true);
+
+    const cleanup = () => {
+      process.stdin.removeListener("keypress", keypressHandler);
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    };
+
+    const keypressHandler = (_str: string, key: readline.Key) => {
+      if (!key) return;
+
+      // Handle Esc being pressed (aborts navigation)
+      if (key.name === "escape" || (key.ctrl && key.name === "c")) {
+        cleanup();
+        readline.moveCursor(process.stdout, 0, -minifiedPageSize - 1);
         readline.clearScreenDown(process.stdout);
-        
-        break;
-      case "down":
-        readline.moveCursor(process.stdout, 0, -pageSize - 1);
-        readline.clearScreenDown(process.stdout);
-        if (array.slice(pageSize).length < pageSize) {
-          process.stdin.removeListener("keypress", keypressHandler);
+        resolve({
+          selectedItem: undefined,
+          cancelled: true,
+        });
+        return;
+      }
+
+      switch (key.name) {
+        case "up":
+          if (currentIndex <= 0) break;
+
+          cleanup();
+          readline.moveCursor(process.stdout, 0, -minifiedPageSize - 1);
+          readline.clearScreenDown(process.stdout);
+
+          const previousIndex = Math.max(0, currentIndex - originalPageSize);
           navigateArray(
-            array.slice(pageSize),
-            array.slice(pageSize).length,
+            originalArray.slice(previousIndex),
+            originalPageSize,
             originalArray,
-            originalPageSize
+            originalPageSize,
+            previousIndex
+          ).then(resolve);
+
+          break;
+
+        case "down":
+          if (currentIndex + minifiedPageSize < originalArray.length) {
+            cleanup();
+            readline.moveCursor(process.stdout, 0, -minifiedPageSize - 1);
+            readline.clearScreenDown(process.stdout);
+
+            const nextIndex = currentIndex + minifiedPageSize;
+            const remainingItems = originalArray.length - nextIndex;
+            const nextPageSize = Math.min(originalPageSize, remainingItems);
+
+            navigateArray(
+              originalArray.slice(nextIndex),
+              nextPageSize,
+              originalArray,
+              originalPageSize,
+              nextIndex
+            ).then(resolve);
+          }
+          break;
+
+        case "return":
+          // start in-page nav
+          cleanup();
+          readline.moveCursor(process.stdout, 0, -minifiedPageSize - 1);
+          readline.clearScreenDown(process.stdout);
+
+          inPageNavigation(currentPage, currentIndex, originalArray).then(
+            resolve
           );
           break;
-        }
-        process.stdin.removeListener("keypress", keypressHandler);
-        navigateArray(
-          array.slice(pageSize),
-          pageSize,
-          originalArray,
-          originalPageSize
-        );
-        break;
-      default:
-        break;
-    }
-  };
 
-  process.stdin.on("keypress", keypressHandler);
+        default:
+          break;
+      }
+    };
+
+    process.stdin.on("keypress", keypressHandler);
+  });
 }
 
-navigateArray(
-  [
-    "apple",
-    "river",
-    "cloud",
-    "stone",
-    "flame",
-    "mouse",
-    "leaf",
-    "star",
-    "book",
-    "drift",
-  ],
-  4
-);
+async function inPageNavigation(
+  currentPage: string[],
+  pageStartIndex: number,
+  originalArray: string[],
+  selectionIndicator = "*"
+): Promise<ArrayNavigationResult> {
+  return new Promise((resolve) => {
+    let selectedIndex = 0;
+
+    const displayPage = () => {
+      currentPage.forEach((item, itemIndex) => {
+        console.log(
+          item + (itemIndex === selectedIndex ? ` ${selectionIndicator}` : "")
+        );
+      });
+      console.log(
+        "(Arrow keys to select, Enter to confirm, Esc/Ctrl+C to cancel)"
+      );
+    };
+
+    displayPage();
+
+    readline.emitKeypressEvents(process.stdin);
+    if (process.stdin.isTTY) process.stdin.setRawMode(true);
+
+    const cleanup = () => {
+      process.stdin.removeListener("keypress", selectionHandler);
+      if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    };
+
+    const selectionHandler = (_str: string, key: readline.Key) => {
+      if (!key) return;
+
+      // Handle Esc being pressed (aborts navigation)
+      if (key.name === "escape" || (key.ctrl && key.name === "c")) {
+        cleanup();
+        readline.moveCursor(process.stdout, 0, -currentPage.length - 1);
+        readline.clearScreenDown(process.stdout);
+        resolve({
+          selectedItem: undefined,
+          cancelled: true,
+        });
+        return;
+      }
+
+      switch (key.name) {
+        case "up":
+          if (selectedIndex <= 0) break;
+
+          selectedIndex--;
+          readline.moveCursor(process.stdout, 0, -currentPage.length - 1);
+          readline.clearScreenDown(process.stdout);
+          displayPage();
+          break;
+
+        case "down":
+          if (selectedIndex >= currentPage.length - 1) break;
+
+          selectedIndex++;
+          readline.moveCursor(process.stdout, 0, -currentPage.length - 1);
+          readline.clearScreenDown(process.stdout);
+          displayPage();
+          break;
+
+        case "return":
+          cleanup();
+          readline.moveCursor(process.stdout, 0, -currentPage.length - 1);
+          readline.clearScreenDown(process.stdout);
+
+          const selectedItem = currentPage[selectedIndex];
+          resolve({
+            selectedItem,
+            cancelled: false,
+          });
+          break;
+      }
+    };
+
+    process.stdin.addListener("keypress", selectionHandler);
+  });
+}
