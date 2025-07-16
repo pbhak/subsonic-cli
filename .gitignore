@@ -1,5 +1,6 @@
-# application config
+# application config and song cache
 config.yml
+cache/
 
 # dependencies (bun install)
 node_modules
