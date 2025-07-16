@@ -2,6 +2,7 @@ import * as readline from "node:readline";
 
 interface ArrayNavigationResult {
   selectedItem: string | undefined;
+  selectedIndex: number | undefined;
   cancelled: boolean;
 }
 
@@ -16,6 +17,7 @@ export function navigateArray(
     if (!array || array.length === 0) {
       resolve({
         selectedItem: undefined,
+        selectedIndex: undefined,
         cancelled: true,
       });
       return;
@@ -56,6 +58,7 @@ export function navigateArray(
         readline.clearScreenDown(process.stdout);
         resolve({
           selectedItem: undefined,
+          selectedIndex: undefined,
           cancelled: true,
         });
         return;
@@ -160,6 +163,7 @@ async function inPageNavigation(
         readline.clearScreenDown(process.stdout);
         resolve({
           selectedItem: undefined,
+          selectedIndex: undefined,
           cancelled: true,
         });
         return;
@@ -192,6 +196,7 @@ async function inPageNavigation(
           const selectedItem = currentPage[selectedIndex];
           resolve({
             selectedItem,
+            selectedIndex,
             cancelled: false,
           });
           break;
