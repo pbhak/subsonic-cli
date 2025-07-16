@@ -1,7 +1,6 @@
 import { Command } from "commander";
 import { md5 } from "js-md5";
 import * as yaml from "js-yaml";
-import player from "play-sound";
 import { randomBytes } from "node:crypto";
 import {
   existsSync,
@@ -9,10 +8,13 @@ import {
   writeFileSync,
   mkdirSync,
   lchown,
+  rmdirSync,
+  rm,
 } from "node:fs";
 import path from "node:path";
 import { navigateArray } from "./arrayNavigation";
 import { writeFile } from "node:fs/promises";
+import * as readline from "readline";
 
 const configPath = path.join(import.meta.dirname, "../config.yml");
 
@@ -203,15 +205,29 @@ async function playSong(songId: string, songName: string) {
           Buffer.from(buffer)
         )
     );
-  player().play(
+  console.log(`Playing ${songName}... (ESC/Ctrl+C to exit)`);
+  const proc = Bun.spawn([
+    "ffplay",
+    "-nodisp",
+    "-autoexit",
+    "-loglevel",
+    "quiet",
     path.join(
       import.meta.dirname,
       `../cache/${songName.replaceAll(" ", "_")}.mp3`
     ),
-    (err: Error) => {
-      if (err) throw err;
+  ]);
+
+  readline.emitKeypressEvents(process.stdin);
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+
+  process.stdin.on("keypress", (_str: string, key: readline.Key) => {
+    if (key.name === "escape" || (key.ctrl && key.name === "c")) {
+      proc.kill();
     }
-  );
+  });
+
+  await proc.exited;
 }
 
 const app = new Command();
@@ -357,6 +373,8 @@ app
           const searchURL = createURL("/rest/search2") as URL;
           searchURL.searchParams.set("f", "json");
 
+          process.stdout.write("Establishing connection to server..");
+
           let searchResponse: SearchResponse;
           try {
             searchResponse = (await fetch(searchURL).then(
@@ -366,6 +384,8 @@ app
             console.log("Error connecting to server");
             return;
           }
+
+          console.log(".connection established!");
 
           if (
             !searchResponse ||
@@ -382,19 +402,37 @@ app
 
           if (navigation.cancelled) {
             console.log("Navigation cancelled");
-            return;
+            process.exit();
           }
 
-          const selectedItem = navigation;
           const selectedSong = songList[navigation.selectedIndex as number];
           console.log("Downloading song...");
-          playSong(selectedSong?.id as string, selectedSong?.title as string);
-          console.log(
-            `${selectedSong?.title as string} launched in media player!`
+          await playSong(
+            selectedSong?.id as string,
+            selectedSong?.title as string
           );
           process.exit();
       }
     }
+  });
+
+app
+  .command("clear")
+  .description("Clear song cache")
+  .action(() => {
+    if (!existsSync(path.join(import.meta.dirname, "../cache"))) {
+      console.log("Cache does not exist");
+      return;
+    }
+
+    rm(
+      path.join(import.meta.dirname, "../cache"),
+      { recursive: true, force: true },
+      (err) => {
+        if (err) throw err;
+        console.log("Cache cleared!");
+      }
+    );
   });
 
 app.parse();
