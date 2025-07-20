@@ -1,6 +1,6 @@
 import * as readline from "node:readline";
 
-interface ArrayNavigationResult {
+export type ArrayNavigationResult = {
   selectedItem: string | undefined;
   selectedIndex: number | undefined;
   cancelled: boolean;
