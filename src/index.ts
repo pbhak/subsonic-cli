@@ -248,6 +248,162 @@ type GetPlaylistResponse = {
   };
 };
 
+type AlbumListResponse = {
+  "subsonic-response": {
+    status: string;
+    version: string;
+    type: string;
+    serverVersion: string;
+    openSubsonic: boolean;
+    albumList: {
+      album: Array<{
+        id: string;
+        parent: string;
+        isDir: boolean;
+        title: string;
+        name: string;
+        album: string;
+        artist: string;
+        year: number;
+        genre?: string;
+        coverArt: string;
+        duration: number;
+        playCount: number;
+        created: string;
+        artistId: string;
+        songCount: number;
+        isVideo: boolean;
+        played: string;
+        bpm: number;
+        comment: string;
+        sortName: string;
+        mediaType: string;
+        musicBrainzId: string;
+        genres: Array<{
+          name: string;
+        }>;
+        replayGain: {};
+        channelCount: number;
+        samplingRate: number;
+        bitDepth: number;
+        moods: Array<any>;
+        artists: Array<{
+          id: string;
+          name: string;
+        }>;
+        displayArtist: string;
+        albumArtists: Array<{
+          id: string;
+          name: string;
+        }>;
+        displayAlbumArtist: string;
+        contributors: Array<any>;
+        displayComposer: string;
+        explicitStatus: string;
+      }>;
+    };
+  };
+};
+
+type GetAlbumResponse = {
+  "subsonic-response": {
+    status: string;
+    version: string;
+    type: string;
+    serverVersion: string;
+    openSubsonic: boolean;
+    album: {
+      id: string;
+      name: string;
+      artist: string;
+      artistId: string;
+      coverArt: string;
+      songCount: number;
+      duration: number;
+      playCount: number;
+      created: string;
+      year: number;
+      genre: string;
+      played: string;
+      userRating: number;
+      genres: Array<{
+        name: string;
+      }>;
+      musicBrainzId: string;
+      isCompilation: boolean;
+      sortName: string;
+      discTitles: Array<any>;
+      originalReleaseDate: {};
+      releaseDate: {};
+      releaseTypes: Array<any>;
+      recordLabels: Array<any>;
+      moods: Array<any>;
+      artists: Array<{
+        id: string;
+        name: string;
+      }>;
+      displayArtist: string;
+      explicitStatus: string;
+      version: string;
+      song: Array<{
+        id: string;
+        parent: string;
+        isDir: boolean;
+        title: string;
+        album: string;
+        artist: string;
+        track: number;
+        year: number;
+        genre: string;
+        coverArt: string;
+        size: number;
+        contentType: string;
+        suffix: string;
+        duration: number;
+        bitRate: number;
+        path: string;
+        playCount: number;
+        discNumber: number;
+        created: string;
+        albumId: string;
+        artistId: string;
+        type: string;
+        isVideo: boolean;
+        played: string;
+        bpm: number;
+        comment: string;
+        sortName: string;
+        mediaType: string;
+        musicBrainzId: string;
+        genres: Array<{
+          name: string;
+        }>;
+        replayGain: {
+          trackPeak: number;
+          albumPeak: number;
+        };
+        channelCount: number;
+        samplingRate: number;
+        bitDepth: number;
+        moods: Array<any>;
+        artists: Array<{
+          id: string;
+          name: string;
+        }>;
+        displayArtist: string;
+        albumArtists: Array<{
+          id: string;
+          name: string;
+        }>;
+        displayAlbumArtist: string;
+        contributors: Array<any>;
+        displayComposer: string;
+        explicitStatus: string;
+      }>;
+    };
+  };
+};
+
 function sanitizeFilename(fileName: string): string {
   return fileName.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/\s+/g, "_");
 }
@@ -296,7 +452,7 @@ function createURL(endpoint: string): URL | undefined {
 async function playSong(
   songId: string,
   songName: string,
-  playlist: boolean = false
+  songList: boolean = false
 ) {
   const streamURL = createURL("stream") as URL;
   streamURL.searchParams.set("format", "mp3");
@@ -308,7 +464,7 @@ async function playSong(
   let exit = false;
 
   const keypressHandler = (_str: string, _key: readline.Key) => {
-    if (playlist) exit = true;
+    if (songList) exit = true;
   };
 
   process.stdin.on("keypress", keypressHandler);
@@ -337,7 +493,7 @@ async function playSong(
           )
       );
   }
-  console.log(`. playing ${!playlist ? "(ESC/Ctrl+C to exit)" : ""}`);
+  console.log(`. playing ${!songList ? "(ESC/Ctrl+C to exit)" : ""}`);
 
   process.stdin.removeListener("keypress", keypressHandler);
 
@@ -355,7 +511,7 @@ async function playSong(
 
   const killSongHandler = (_str: string, key: readline.Key) => {
     if (key.name === "escape" || (key.ctrl && key.name === "c")) process.exit();
-    if (playlist) proc.kill();
+    if (songList) proc.kill();
   };
 
   process.stdin.on("keypress", killSongHandler);
@@ -599,12 +755,69 @@ app
                 );
                 await playSong(song.id, song.title, true);
               }
-            } catch (e) {
-              console.log(e);
+            } catch {
               console.log("An error occurred while fetching playlist data");
             }
           } catch {
             console.log("An error occured while connecting to the server");
+          }
+          break;
+
+        case "a":
+        case "album":
+          const albumListURL = createURL("getAlbumList") as URL;
+          albumListURL.searchParams.set("type", "frequent");
+
+          try {
+            const albumListResponse = (await fetch(albumListURL).then(
+              async (res) => await res.json()
+            )) as AlbumListResponse;
+
+            const albumList =
+              albumListResponse["subsonic-response"].albumList.album;
+            const searchResult = new FuzzySearch(albumList, ["title"]).search(
+              string
+            );
+
+            let selectedAlbum;
+
+            if (searchResult.length === 0) {
+              console.log(`No search results found`);
+              break;
+            } else if (searchResult.length === 1) {
+              selectedAlbum = searchResult[0];
+            } else {
+              const navigation = await navigateArray(
+                searchResult.map((song) => song.title)
+              );
+
+              if (!navigation.cancelled) {
+                selectedAlbum = searchResult[navigation.selectedIndex!];
+              }
+            }
+
+            const albumId = selectedAlbum?.id!;
+            const albumURL = createURL("getAlbum") as URL;
+            albumURL.searchParams.set("id", albumId);
+
+            try {
+              const albumData = (await fetch(albumURL).then(
+                async (res) => await res.json()
+              )) as GetAlbumResponse;
+              console.log("(Press any key for next song, ESC/Ctrl+C to exit)");
+
+              for (const song of albumData["subsonic-response"].album.song) {
+                process.stdout.write(
+                  `Downloading song ${song.title} - ${song.artist}..`
+                );
+                await playSong(song.id, song.title, true);
+              }
+            } catch {
+              console.log("Error occurred while fetching album data");
+            }
+            // call arraynav on searchresult then iter over ids and play each sobg with playSonog
+          } catch {
+            console.log("Error while fetching album information");
           }
           break;
       }
