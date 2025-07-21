@@ -1,3 +1,12 @@
+import type {
+  Config,
+  PingResponse,
+  SearchResponse,
+  PlaylistsResponse,
+  GetPlaylistResponse,
+  AlbumListResponse,
+  GetAlbumResponse,
+} from "./api/types";
 import { Command } from "commander";
 import { md5 } from "js-md5";
 import * as yaml from "js-yaml";
@@ -17,393 +26,6 @@ import FuzzySearch from "fuzzy-search";
 
 const configPath = path.join(import.meta.dirname, "../config.yml");
 
-type ConfigFile = {
-  username?: string;
-  password?: string;
-  url?: string;
-};
-
-type PingResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-  };
-};
-
-// TODO please fix this
-
-type Song = {
-  id: string;
-  parent: string;
-  isDir: boolean;
-  title: string;
-  album: string;
-  artist: string;
-  track: number;
-  year: number;
-  coverArt: string;
-  size: number;
-  contentType: string;
-  suffix: string;
-  duration: number;
-  bitRate: number;
-  path: string;
-  playCount: number;
-  discNumber: number;
-  created: string;
-  albumId: string;
-  artistId: string;
-  type: string;
-  isVideo: boolean;
-  played: string;
-  bpm: number;
-  comment: string;
-  sortName: string;
-  mediaType: string;
-  musicBrainzId: string;
-  genres: Array<any>;
-  replayGain: {
-    trackPeak: number;
-    albumPeak: number;
-  };
-  channelCount: number;
-  samplingRate: number;
-  bitDepth: number;
-  moods: Array<any>;
-  artists: Array<{
-    id: string;
-    name: string;
-  }>;
-  displayArtist: string;
-  albumArtists: Array<{
-    id: string;
-    name: string;
-  }>;
-  displayAlbumArtist: string;
-  contributors: Array<any>;
-  displayComposer: string;
-  explicitStatus: string;
-};
-
-type SearchResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-    searchResult2: {
-      artist: Array<{
-        id: string;
-        name: string;
-        starred: string;
-        coverArt: string;
-        artistImageUrl: string;
-      }>;
-      album: Array<{
-        id: string;
-        parent: string;
-        isDir: boolean;
-        title: string;
-        name: string;
-        album: string;
-        artist: string;
-        year: number;
-        coverArt: string;
-        duration: number;
-        created: string;
-        artistId: string;
-        songCount: number;
-        isVideo: boolean;
-        bpm: number;
-        comment: string;
-        sortName: string;
-        mediaType: string;
-        musicBrainzId: string;
-        genres: Array<any>;
-        replayGain: {};
-        channelCount: number;
-        samplingRate: number;
-        bitDepth: number;
-        moods: Array<any>;
-        artists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayArtist: string;
-        albumArtists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayAlbumArtist: string;
-        contributors: Array<any>;
-        displayComposer: string;
-        explicitStatus: string;
-        playCount?: number;
-        played?: string;
-      }>;
-      song: Array<{
-        id: string;
-        parent: string;
-        isDir: boolean;
-        title: string;
-        album: string;
-        artist: string;
-        track: number;
-        year: number;
-        coverArt: string;
-        size: number;
-        contentType: string;
-        suffix: string;
-        duration: number;
-        bitRate: number;
-        path: string;
-        playCount?: number;
-        discNumber: number;
-        created: string;
-        albumId: string;
-        artistId: string;
-        type: string;
-        isVideo: boolean;
-        played?: string;
-        bpm: number;
-        comment: string;
-        sortName: string;
-        mediaType: string;
-        musicBrainzId: string;
-        genres: Array<any>;
-        replayGain: {
-          trackPeak: number;
-          albumPeak: number;
-        };
-        channelCount: number;
-        samplingRate: number;
-        bitDepth: number;
-        moods: Array<any>;
-        artists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayArtist: string;
-        albumArtists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayAlbumArtist: string;
-        contributors: Array<any>;
-        displayComposer: string;
-        explicitStatus: string;
-      }>;
-    };
-  };
-};
-
-type PlaylistsResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-    playlists: {
-      playlist: Array<{
-        id: string;
-        name: string;
-        songCount: number;
-        duration: number;
-        public: boolean;
-        owner: string;
-        created: string;
-        changed: string;
-        coverArt: string;
-        comment?: string;
-      }>;
-    };
-  };
-};
-
-type GetPlaylistResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-    playlist: {
-      id: string;
-      name: string;
-      comment: string;
-      songCount: number;
-      duration: number;
-      public: boolean;
-      owner: string;
-      created: string;
-      changed: string;
-      coverArt: string;
-      entry: Song[];
-    };
-  };
-};
-
-type AlbumListResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-    albumList: {
-      album: Array<{
-        id: string;
-        parent: string;
-        isDir: boolean;
-        title: string;
-        name: string;
-        album: string;
-        artist: string;
-        year: number;
-        genre?: string;
-        coverArt: string;
-        duration: number;
-        playCount: number;
-        created: string;
-        artistId: string;
-        songCount: number;
-        isVideo: boolean;
-        played: string;
-        bpm: number;
-        comment: string;
-        sortName: string;
-        mediaType: string;
-        musicBrainzId: string;
-        genres: Array<{
-          name: string;
-        }>;
-        replayGain: {};
-        channelCount: number;
-        samplingRate: number;
-        bitDepth: number;
-        moods: Array<any>;
-        artists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayArtist: string;
-        albumArtists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayAlbumArtist: string;
-        contributors: Array<any>;
-        displayComposer: string;
-        explicitStatus: string;
-      }>;
-    };
-  };
-};
-
-type GetAlbumResponse = {
-  "subsonic-response": {
-    status: string;
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-    album: {
-      id: string;
-      name: string;
-      artist: string;
-      artistId: string;
-      coverArt: string;
-      songCount: number;
-      duration: number;
-      playCount: number;
-      created: string;
-      year: number;
-      genre: string;
-      played: string;
-      userRating: number;
-      genres: Array<{
-        name: string;
-      }>;
-      musicBrainzId: string;
-      isCompilation: boolean;
-      sortName: string;
-      discTitles: Array<any>;
-      originalReleaseDate: {};
-      releaseDate: {};
-      releaseTypes: Array<any>;
-      recordLabels: Array<any>;
-      moods: Array<any>;
-      artists: Array<{
-        id: string;
-        name: string;
-      }>;
-      displayArtist: string;
-      explicitStatus: string;
-      version: string;
-      song: Array<{
-        id: string;
-        parent: string;
-        isDir: boolean;
-        title: string;
-        album: string;
-        artist: string;
-        track: number;
-        year: number;
-        genre: string;
-        coverArt: string;
-        size: number;
-        contentType: string;
-        suffix: string;
-        duration: number;
-        bitRate: number;
-        path: string;
-        playCount: number;
-        discNumber: number;
-        created: string;
-        albumId: string;
-        artistId: string;
-        type: string;
-        isVideo: boolean;
-        played: string;
-        bpm: number;
-        comment: string;
-        sortName: string;
-        mediaType: string;
-        musicBrainzId: string;
-        genres: Array<{
-          name: string;
-        }>;
-        replayGain: {
-          trackPeak: number;
-          albumPeak: number;
-        };
-        channelCount: number;
-        samplingRate: number;
-        bitDepth: number;
-        moods: Array<any>;
-        artists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayArtist: string;
-        albumArtists: Array<{
-          id: string;
-          name: string;
-        }>;
-        displayAlbumArtist: string;
-        contributors: Array<any>;
-        displayComposer: string;
-        explicitStatus: string;
-      }>;
-    };
-  };
-};
-
 function sanitizeFilename(fileName: string): string {
   return fileName.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/\s+/g, "_");
 }
@@ -420,7 +42,7 @@ function isValidURL(url: string) {
 
 function createURL(endpoint: string): URL | undefined {
   if (existsSync(configPath)) {
-    const yamlData = yaml.load(readFileSync(configPath, "utf8")) as ConfigFile;
+    const yamlData = yaml.load(readFileSync(configPath, "utf8")) as Config;
 
     if (!yamlData) {
       console.log("Error - invalid config");
@@ -542,7 +164,7 @@ app
     if (existsSync(configPath)) {
       const yamlData = yaml.load(
         readFileSync(configPath, "utf8")
-      ) as ConfigFile;
+      ) as Config;
 
       if (!yamlData) {
         writeFileSync(configPath, yaml.dump({ url }));
@@ -571,7 +193,7 @@ app
     if (existsSync(configPath)) {
       const yamlData = yaml.load(
         readFileSync(configPath, "utf8")
-      ) as ConfigFile;
+      ) as Config;
 
       if (!yamlData) {
         writeFileSync(configPath, yaml.dump({ username, password }));
@@ -599,7 +221,7 @@ app
     if (existsSync(configPath)) {
       const yamlData = yaml.load(
         readFileSync(configPath, "utf8")
-      ) as ConfigFile;
+      ) as Config;
 
       if (!yamlData) {
         console.log("Error - invalid config");
@@ -635,13 +257,13 @@ app
 app
   .command("play")
   .description("Play song via ffplay")
-  .argument("<category>", "Type of music to play (album, playlist)")
+  .argument("<category>", "Type of music to play ([s]ong, [a]lbum, [p]laylist)")
   .argument("<string>", "Search string")
   .action(async (category: string, string: string) => {
     if (existsSync(configPath)) {
       const yamlData = yaml.load(
         readFileSync(configPath, "utf8")
-      ) as ConfigFile;
+      ) as Config;
 
       if (!yamlData) {
         console.log("Error - invalid config");
@@ -767,6 +389,7 @@ app
         case "album":
           const albumListURL = createURL("getAlbumList") as URL;
           albumListURL.searchParams.set("type", "frequent");
+          albumListURL.searchParams.set("size", "500");
 
           try {
             const albumListResponse = (await fetch(albumListURL).then(
@@ -815,7 +438,6 @@ app
             } catch {
               console.log("Error occurred while fetching album data");
             }
-            // call arraynav on searchresult then iter over ids and play each sobg with playSonog
           } catch {
             console.log("Error while fetching album information");
           }
