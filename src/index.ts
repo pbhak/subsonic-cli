@@ -33,8 +33,8 @@ function sanitizeFilename(fileName: string): string {
 function isValidURL(url: string) {
   // the URL class constructor errors if the passed in string is not a valid URL
   try {
-    new URL(url);
-    return true;
+    const parsedURL = new URL(url);
+    return ["http:", "https:"].includes(parsedURL.protocol);
   } catch (error) {
     return false;
   }
@@ -162,9 +162,7 @@ app
     }
 
     if (existsSync(configPath)) {
-      const yamlData = yaml.load(
-        readFileSync(configPath, "utf8")
-      ) as Config;
+      const yamlData = yaml.load(readFileSync(configPath, "utf8")) as Config;
 
       if (!yamlData) {
         writeFileSync(configPath, yaml.dump({ url }));
@@ -191,9 +189,7 @@ app
   .argument("<password>", "Server password")
   .action((username: string, password: string) => {
     if (existsSync(configPath)) {
-      const yamlData = yaml.load(
-        readFileSync(configPath, "utf8")
-      ) as Config;
+      const yamlData = yaml.load(readFileSync(configPath, "utf8")) as Config;
 
       if (!yamlData) {
         writeFileSync(configPath, yaml.dump({ username, password }));
@@ -219,9 +215,7 @@ app
   .description("Check connection to server")
   .action(async () => {
     if (existsSync(configPath)) {
-      const yamlData = yaml.load(
-        readFileSync(configPath, "utf8")
-      ) as Config;
+      const yamlData = yaml.load(readFileSync(configPath, "utf8")) as Config;
 
       if (!yamlData) {
         console.log("Error - invalid config");
@@ -261,9 +255,7 @@ app
   .argument("<string>", "Search string")
   .action(async (category: string, string: string) => {
     if (existsSync(configPath)) {
-      const yamlData = yaml.load(
-        readFileSync(configPath, "utf8")
-      ) as Config;
+      const yamlData = yaml.load(readFileSync(configPath, "utf8")) as Config;
 
       if (!yamlData) {
         console.log("Error - invalid config");
