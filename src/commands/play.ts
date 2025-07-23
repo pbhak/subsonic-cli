@@ -1,3 +1,4 @@
+import FuzzySearch from "fuzzy-search";
 import type { SubsonicClient } from "../api/client";
 import type { Album, Playlist, Song } from "../api/types";
 import { navigateArray, type ArrayNavigationResult } from "../arrayNavigation";
@@ -37,6 +38,10 @@ async function playLogic(
       songURL.searchParams.set("id", selectedSong.id);
       songURL.searchParams.set("format", "mp3");
 
+      process.stdout.write(
+        `Downloading ${selectedSong.title} - ${selectedSong.artist}..`
+      );
+
       await playSong(selectedSong.title, songURL);
       break;
 
@@ -46,31 +51,46 @@ async function playLogic(
       let selectedPlaylist: Playlist;
 
       if (!allPlaylists || allPlaylists.length === 0) {
-        console.log(`No playlists found`);
+        console.log("No playlists found");
         break;
       } else if (allPlaylists.length === 1) {
         selectedPlaylist = allPlaylists[0]!;
       } else {
-        const playlistNav: ArrayNavigationResult = await navigateArray(
-          allPlaylists.map((playlist) => playlist.name)
-        );
+        // More than 1 entry in allPLaylists: do a fuzzy search for the search query
+        const searchedPlaylists = new FuzzySearch(allPlaylists, ["name"], {
+          sort: true,
+        }).search(searchQuery);
 
-        if (playlistNav.cancelled) {
-          console.log("Navigation cancelled by user");
+        if (!searchedPlaylists || searchedPlaylists.length === 0) {
+          console.log("No playlists found");
           break;
-        }
+        } else if (searchedPlaylists.length === 1) {
+          selectedPlaylist = searchedPlaylists[0]!;
+        } else {
+          const playlistNav: ArrayNavigationResult = await navigateArray(
+            searchedPlaylists.map((playlist) => playlist.name)
+          );
 
-        selectedPlaylist = allPlaylists[playlistNav.selectedIndex!]!;
+          if (playlistNav.cancelled) {
+            console.log("Navigation cancelled by user");
+            break;
+          }
+
+          selectedPlaylist = searchedPlaylists[playlistNav.selectedIndex!]!;
+        }
       }
 
       const playlistData = await client.getPlaylist(selectedPlaylist.id);
 
+      console.log("(Press any key for next, ESC/Ctrl+C to exit)");
       for (const song of playlistData.entry) {
         const songURL = client.createURL("stream");
         songURL.searchParams.set("id", song.id);
         songURL.searchParams.set("format", "mp3");
 
-        await playSong(song.title, songURL);
+        process.stdout.write(`Downloading ${song.title} - ${song.artist}..`);
+
+        await playSong(song.title, songURL, true);
       }
       break;
 
@@ -85,28 +105,43 @@ async function playLogic(
       } else if (allAlbums.length === 1) {
         selectedAlbum = allAlbums[0]!;
       } else {
-        const albumNav: ArrayNavigationResult = await navigateArray(
-          allAlbums.map((album) => album.title)
-        );
+        const searchedAlbums = new FuzzySearch(allAlbums, ["title"], {
+          sort: true,
+        }).search(searchQuery);
 
-        if (albumNav.cancelled) {
-          console.log("Navigation cancelled by user");
+        if (!searchedAlbums || searchedAlbums.length === 0) {
+          console.log("No albums found");
           break;
-        }
+        } else if (searchedAlbums.length === 1) {
+          selectedAlbum = searchedAlbums[0]!;
+        } else {
+          const albumNav: ArrayNavigationResult = await navigateArray(
+            searchedAlbums.map((album) => album.title)
+          );
 
-        selectedAlbum = allAlbums[albumNav.selectedIndex!]!;
+          if (albumNav.cancelled) {
+            console.log("Navigation cancelled by user");
+            break;
+          }
+
+          selectedAlbum = searchedAlbums[albumNav.selectedIndex!]!;
+        }
       }
 
       const albumData = await client.getAlbum(selectedAlbum.id);
+      console.log("(Press any key for next, ESC/Ctrl+C to exit)");
       for (const song of albumData.song) {
         const songURL = client.createURL("stream");
         songURL.searchParams.set("id", song.id);
         songURL.searchParams.set("format", "mp3");
 
-        await playSong(song.title, songURL);
+        process.stdout.write(`Downloading ${song.title} - ${song.artist}..`);
+
+        await playSong(song.title, songURL, true);
       }
       break;
   }
+  process.exit();
 }
 
 export const play = runCommand(playLogic);

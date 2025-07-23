@@ -12,14 +12,13 @@ export async function playSong(
 
   // Sanitize filename of song
   const sanitizedFilePath = path.join(
-    import.meta.dir,
     cachePath,
     songName.replace(/[<>:"/\\|?*\x00-\x1F]/g, "").replace(/\s+/g, "_") + ".mp3"
   );
 
   // Download song if it isn't currently cached
   if (!(await exists(sanitizedFilePath))) {
-    await mkdir(cachePath);
+    await mkdir(cachePath, { recursive: true });
 
     const songDataReq = await fetch(url);
     const songDataBuffer = await songDataReq.arrayBuffer();
@@ -27,7 +26,7 @@ export async function playSong(
     await writeFile(sanitizedFilePath, Buffer.from(songDataBuffer));
   }
 
-  console.log(`. playing ${isList ? "" : "(ESC/Ctrl+C to exit)"}`);
+  console.log(`.playing ${isList ? "" : "(ESC/Ctrl+C to exit)"}`);
   const ffplayProc = Bun.spawn([
     "ffplay",
     "-nodisp",
