@@ -41,11 +41,25 @@ export async function playSong(
 
   if (scrobbleURL) void fetch(scrobbleURL);
 
+  let processKilled = false;
+
   const keypressHandler = (_str: string, key: readline.Key) => {
     // Exit on Esc/Ctrl+C
-    if (key.name === "escape" || (key.ctrl && key.name === "c")) process.exit();
+    if (key.name === "escape" || (key.ctrl && key.name === "c")) {
+      ffplayProc.kill();
+      process.exit();
+    }
     // If the current song is a playlist/album, then make any keypress kill the song player
-    if (isList) ffplayProc.kill();
+    // SIGUSR1 prevents overlap with something like the kill command
+    if (isList) {
+      try {
+        ffplayProc.kill("SIGUSR1");
+      } catch {
+        // in case that doesn't work, send a SIGTERM instead and set processKilled to true (jank, i know)
+        ffplayProc.kill();
+        processKilled = true;
+      }
+    }
   };
 
   readline.emitKeypressEvents(stdin);
@@ -54,16 +68,28 @@ export async function playSong(
   process.stdin.on("keypress", keypressHandler);
 
   await new Promise<void>((resolve) => {
-    ffplayProc.on("close", (code, signal) => {
-      if (signal !== null) {
-        // If the exit code is null/undefined, and signal is not null/undefined,
-        // then ffplay was terminated with a signal
-        console.log(`\nFFplay terminated by signal (${signal})`)
+    let exited = false;
+    ffplayProc.on("exit", (code, signal) => {
+      exited = true;
+      if (signal === "SIGUSR1" || processKilled) {
+        // handle internal termination (SIGUSR1)
+        resolve();
+      } else if (signal !== null) {
+        console.log(`\nFFplay terminated by signal (${signal})`);
         process.exit();
-      } else if (code !== 0) {
-        console.log(`FFplay exited with exit code ${code}`)
+      } else if (code !== 0 && code !== 123) {
+        console.log(`FFplay exited with exit code ${code}`);
+        process.exit();
+      } else {
+        resolve();
       }
-      resolve();
+    });
+
+    ffplayProc.on("close", () => {
+      if (!exited) {
+        console.log("FFplay closed unexpectedly");
+        process.exit();
+      }
     });
   });
 
