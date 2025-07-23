@@ -5,7 +5,6 @@ export function clearCache() {
   const cachePath = join(import.meta.dir, "../../cache/");
   if (existsSync(cachePath)) {
     rmSync(cachePath, { recursive: true, force: true });
-    return true;
+    return;
   }
-  return false;
 }

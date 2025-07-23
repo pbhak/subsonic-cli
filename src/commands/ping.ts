@@ -4,7 +4,7 @@ import { runCommand } from "./handler";
 async function pingLogic(client: SubsonicClient) {
   const ping = await client.ping();
   console.log(
-    `Server is online! Server running Subsonic version ${ping.serverVersion}`
+    `Server is online and running Subsonic version ${ping.serverVersion}!`
   );
 }
 
