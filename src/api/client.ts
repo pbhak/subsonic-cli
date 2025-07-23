@@ -6,6 +6,7 @@ import type {
   GetAlbumResponse,
   GetPlaylistResponse,
   PingResponse,
+  Playlist,
   PlaylistsResponse,
   SearchResponse,
 } from "./types";
@@ -35,7 +36,7 @@ export class SubsonicClient {
   }
 
   /** Ping Subsonic server and return server info if successful */
-  public async ping() {
+  async ping() {
     const pingURL = this.createURL("ping");
 
     try {
@@ -60,7 +61,7 @@ export class SubsonicClient {
   }
 
   /** Send search request to server and return list of all songs matching specified query */
-  public async search(query: string) {
+  async search(query: string) {
     const searchURL = this.createURL("search2");
     searchURL.searchParams.set("songCount", "50000");
     searchURL.searchParams.set("artistCount", "0");
@@ -89,7 +90,7 @@ export class SubsonicClient {
   }
 
   /** Get list of all playlists that can be played by the user */
-  public async getPlaylists() {
+  async getPlaylists() {
     const playlistsURL = this.createURL("getPlaylists");
 
     try {
@@ -116,7 +117,7 @@ export class SubsonicClient {
   }
 
   /** Get info and song listing of playlist with given ID */
-  public async getPlaylist(id: string) {
+  async getPlaylist(id: string) {
     const playlistInfoURL = this.createURL("getPlaylist");
     playlistInfoURL.searchParams.set("id", id);
 
@@ -145,7 +146,7 @@ export class SubsonicClient {
   }
 
   /** Get list of the top 500 albums playable by a user, in order of frequency */
-  public async getAlbums() {
+  async getAlbums() {
     const albumListURL = this.createURL("getAlbumList");
     albumListURL.searchParams.set("type", "frequent");
     albumListURL.searchParams.set("size", "500");
@@ -174,7 +175,7 @@ export class SubsonicClient {
   }
 
   /** Get info and song listing of album with given ID */
-  public async getAlbum(id: string) {
+  async getAlbum(id: string) {
     const albumInfoURL = this.createURL("getAlbum");
     albumInfoURL.searchParams.set("id", id);
 
@@ -201,7 +202,7 @@ export class SubsonicClient {
     }
   }
 
-  private createURL(endpoint: string): URL {
+  createURL(endpoint: string): URL {
     const url = new URL(`/rest/${endpoint}`, this.url);
     const salt = randomBytes(6).toString("hex");
     const hash = md5(this.password + salt);

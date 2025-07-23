@@ -1,4 +1,14 @@
-type Song = {
+type SubsonicResponse<T> = {
+  "subsonic-response": {
+    status: "ok" | "failed";
+    version: string;
+    type: string;
+    serverVersion: string;
+    openSubsonic: boolean;
+  } & T;
+};
+
+export type Song = {
   id: string;
   parent: string;
   isDir: boolean;
@@ -51,14 +61,63 @@ type Song = {
   explicitStatus: string;
 };
 
-type SubsonicResponse<T> = {
-  "subsonic-response": {
-    status: "ok" | "failed";
-    version: string;
-    type: string;
-    serverVersion: string;
-    openSubsonic: boolean;
-  } & T;
+export type Album = {
+  id: string;
+  parent: string;
+  isDir: boolean;
+  title: string;
+  name: string;
+  album: string;
+  artist: string;
+  year: number;
+  genre?: string;
+  coverArt: string;
+  duration: number;
+  playCount: number;
+  created: string;
+  artistId: string;
+  songCount: number;
+  isVideo: boolean;
+  played: string;
+  bpm: number;
+  comment: string;
+  sortName: string;
+  mediaType: string;
+  musicBrainzId: string;
+  genres: Array<{
+    name: string;
+  }>;
+  replayGain: {};
+  channelCount: number;
+  samplingRate: number;
+  bitDepth: number;
+  moods: Array<any>;
+  artists: Array<{
+    id: string;
+    name: string;
+  }>;
+  displayArtist: string;
+  albumArtists: Array<{
+    id: string;
+    name: string;
+  }>;
+  displayAlbumArtist: string;
+  contributors: Array<any>;
+  displayComposer: string;
+  explicitStatus: string;
+};
+
+export type Playlist = {
+  id: string;
+  name: string;
+  songCount: number;
+  duration: number;
+  public: boolean;
+  owner: string;
+  created: string;
+  changed: string;
+  coverArt: string;
+  comment?: string;
 };
 
 export type Config = {
@@ -126,18 +185,7 @@ export type SearchResponse = SubsonicResponse<{
 
 export type PlaylistsResponse = SubsonicResponse<{
   playlists: {
-    playlist: Array<{
-      id: string;
-      name: string;
-      songCount: number;
-      duration: number;
-      public: boolean;
-      owner: string;
-      created: string;
-      changed: string;
-      coverArt: string;
-      comment?: string;
-    }>;
+    playlist: Playlist[];
   };
 }>;
 
@@ -159,51 +207,7 @@ export type GetPlaylistResponse = SubsonicResponse<{
 
 export type AlbumListResponse = SubsonicResponse<{
   albumList: {
-    album: Array<{
-      id: string;
-      parent: string;
-      isDir: boolean;
-      title: string;
-      name: string;
-      album: string;
-      artist: string;
-      year: number;
-      genre?: string;
-      coverArt: string;
-      duration: number;
-      playCount: number;
-      created: string;
-      artistId: string;
-      songCount: number;
-      isVideo: boolean;
-      played: string;
-      bpm: number;
-      comment: string;
-      sortName: string;
-      mediaType: string;
-      musicBrainzId: string;
-      genres: Array<{
-        name: string;
-      }>;
-      replayGain: {};
-      channelCount: number;
-      samplingRate: number;
-      bitDepth: number;
-      moods: Array<any>;
-      artists: Array<{
-        id: string;
-        name: string;
-      }>;
-      displayArtist: string;
-      albumArtists: Array<{
-        id: string;
-        name: string;
-      }>;
-      displayAlbumArtist: string;
-      contributors: Array<any>;
-      displayComposer: string;
-      explicitStatus: string;
-    }>;
+    album: Album[];
   };
 }>;
 
