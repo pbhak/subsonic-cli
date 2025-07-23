@@ -6,7 +6,8 @@ import * as readline from "readline";
 export async function playSong(
   songName: string,
   url: URL,
-  isList: boolean = false
+  isList: boolean = false,
+  scrobbleURL?: URL
 ) {
   const cachePath = path.join(import.meta.dir, "../cache");
 
@@ -35,6 +36,8 @@ export async function playSong(
     "quiet",
     sanitizedFilePath,
   ]);
+
+  if (scrobbleURL) void fetch(scrobbleURL);
 
   const keypressHandler = (_str: string, key: readline.Key) => {
     // Exit on Esc/Ctrl+C

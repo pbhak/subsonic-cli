@@ -42,7 +42,11 @@ async function playLogic(
         `Downloading ${selectedSong.title} - ${selectedSong.artist}..`
       );
 
-      await playSong(selectedSong.title, songURL);
+      const scrobbleURL = client.createURL("scrobble");
+      scrobbleURL.searchParams.set("id", selectedSong.id);
+      scrobbleURL.searchParams.set("submission", "false");
+
+      await playSong(selectedSong.title, songURL, false, scrobbleURL);
       break;
 
     case "p":
@@ -90,7 +94,11 @@ async function playLogic(
 
         process.stdout.write(`Downloading ${song.title} - ${song.artist}..`);
 
-        await playSong(song.title, songURL, true);
+        const scrobbleURL = client.createURL("scrobble");
+        scrobbleURL.searchParams.set("id", song.id);
+        scrobbleURL.searchParams.set("submission", "false");
+
+        await playSong(song.title, songURL, true, scrobbleURL);
       }
       break;
 
@@ -137,7 +145,11 @@ async function playLogic(
 
         process.stdout.write(`Downloading ${song.title} - ${song.artist}..`);
 
-        await playSong(song.title, songURL, true);
+        const scrobbleURL = client.createURL("scrobble");
+        scrobbleURL.searchParams.set("id", song.id);
+        scrobbleURL.searchParams.set("submission", "false");
+
+        await playSong(song.title, songURL, true, scrobbleURL);
       }
       break;
   }
