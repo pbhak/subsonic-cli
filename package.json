@@ -1,33 +1,30 @@
 {
   "name": "subsonic-cli",
-  "version": "1.0.1",
+  "version": "1.0.8",
   "description": "CLI application to interact with a Subsonic server or a Subsonic API-compatible server",
   "bin": {
-    "scli": "dist/index.js"
+    "scli": "dist/index.js",
+    "subsonic-cli": "dist/index.js"
   },
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --executable --target node",
-    "prepublishOnly": "bun run build"
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "prepack": "npm run build"
   },
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/fuzzy-search": "^2.1.5",
-    "@types/play-sound": "^1.1.2",
-    "@types/commander": "^2.12.5",
-    "@types/js-yaml": "^4.0.9"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
     "commander": "^14.0.0",
+    "fuzzy-search": "^3.2.1",
     "js-md5": "^0.8.3",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "typescript": "^5.0.0"
   }
 }

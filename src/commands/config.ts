@@ -2,8 +2,9 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { load as loadYAML, dump as dumpYAML } from "js-yaml";
 import type { Config } from "../api/types";
+import { homedir } from "os";
 
-const configPath = join(import.meta.dirname, "../../config.yml");
+const configPath = join(homedir(), ".scli-config.yml");
 
 function isValidURL(url: string): boolean {
   // the URL class constructor errors if the passed in string is not a valid URL

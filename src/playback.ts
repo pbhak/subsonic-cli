@@ -1,4 +1,7 @@
-import { exists, mkdir, writeFile } from "fs/promises";
+import { spawn } from "child_process";
+import { existsSync } from "fs";
+import { mkdir, writeFile } from "fs/promises";
+import { homedir } from "os";
 import path from "path";
 import { stdin } from "process";
 import * as readline from "readline";
@@ -9,7 +12,7 @@ export async function playSong(
   isList: boolean = false,
   scrobbleURL?: URL
 ) {
-  const cachePath = path.join(import.meta.dir, "../cache");
+  const cachePath = path.join(homedir(), ".scli-cache/");
 
   // Sanitize filename of song
   const sanitizedFilePath = path.join(
@@ -18,7 +21,7 @@ export async function playSong(
   );
 
   // Download song if it isn't currently cached
-  if (!(await exists(sanitizedFilePath))) {
+  if (!existsSync(sanitizedFilePath)) {
     await mkdir(cachePath, { recursive: true });
 
     const songDataReq = await fetch(url);
@@ -28,8 +31,7 @@ export async function playSong(
   }
 
   console.log(`.playing ${isList ? "" : "(ESC/Ctrl+C to exit)"}`);
-  const ffplayProc = Bun.spawn([
-    "ffplay",
+  const ffplayProc = spawn("ffplay", [
     "-nodisp",
     "-autoexit",
     "-loglevel",
@@ -51,6 +53,12 @@ export async function playSong(
 
   process.stdin.on("keypress", keypressHandler);
 
-  await ffplayProc.exited;
+  await new Promise<void>((resolve) => {
+    ffplayProc.on("close", () => {
+      resolve();
+    });
+  });
+
   process.stdin.removeListener("keypress", keypressHandler);
+  if (stdin.isTTY) stdin.setRawMode(false);
 }

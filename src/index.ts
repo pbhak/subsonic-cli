@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import { setServerCredentials, setServerURL } from "./commands/config";
 import { ping } from "./commands/ping";
@@ -11,7 +13,7 @@ app
   .description(
     "CLI application to interact with a Subsonic server or a Subsonic API-compatible server"
   )
-  .version("1.0.1");
+  .version("1.0.8");
 
 app.command("set-url <url>").description("Set server URL").action(setServerURL);
 
