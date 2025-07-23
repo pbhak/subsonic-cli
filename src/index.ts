@@ -13,7 +13,7 @@ app
   .description(
     "CLI application to interact with a Subsonic server or a Subsonic API-compatible server"
   )
-  .version("1.0.8");
+  .version("1.0.9");
 
 app.command("set-url <url>").description("Set server URL").action(setServerURL);
 

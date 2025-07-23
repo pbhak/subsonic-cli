@@ -54,7 +54,15 @@ export async function playSong(
   process.stdin.on("keypress", keypressHandler);
 
   await new Promise<void>((resolve) => {
-    ffplayProc.on("close", () => {
+    ffplayProc.on("close", (code, signal) => {
+      if (signal !== null) {
+        // If the exit code is null/undefined, and signal is not null/undefined,
+        // then ffplay was terminated with a signal
+        console.log(`\nFFplay terminated by signal (${signal})`)
+        process.exit();
+      } else if (code !== 0) {
+        console.log(`FFplay exited with exit code ${code}`)
+      }
       resolve();
     });
   });
